@@ -23,13 +23,13 @@ export class AppService {
    * @returns {TokenInfoDto} name, symbol and decimals of the token
    */
   async fetchTokenInfo(address: string): Promise<TokenInfoDto> {
-    try {
-      const contract = new ethers.Contract(address, abi, this.provider);
-      const [name, symbol, decimals] = await Promise.all([contract.name(), contract.symbol(), contract.decimals()]);
-      return new TokenInfoDto(name, symbol, decimals);
-    } catch (e) {
-      throw new HttpException(`token with address ${address} not found in network`, HttpStatus.NOT_FOUND);
-    }
+    const contract = new ethers.Contract(address, abi, this.provider);
+    const [name, symbol, decimals] = await Promise.all([
+      this.callContract('name', contract),
+      this.callContract('symbol', contract),
+      this.callContract('decimals', contract),
+    ]);
+    return new TokenInfoDto(name, symbol, decimals);
   }
 
   /**
@@ -52,8 +52,25 @@ export class AppService {
   }
 
   /**
+   * Calls the method passed in from an ethers contract abstraction
+   * @param {string} method name of method to make the call to
+   * @param {ethers.Contract} contract ethers contract abstraction
+   * @returns {any} contract method response data
+   */
+  private async callContract(method: string, contract: ethers.Contract) {
+    try {
+      return contract[method]();
+    } catch (e) {
+      throw new HttpException(
+        `Problem calling "${method}" method on contract "${contract.address}: token not found in network"`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  /**
    * Fetches token balance for a wallet and assembles an object containing the wallet address and respective balance
-   * @param {ethers.Contract} contract abstraction 
+   * @param {ethers.Contract} contract abstraction
    * @param {string} walletAddress to fetch token balance for
    * @param {number} decimals precision of the token
    * @returns {WalletBalanceDto} object containing a wallet address and the respective token balance
