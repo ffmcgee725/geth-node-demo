@@ -1,0 +1,20 @@
+{
+  "name": "client",
+  "version": "0.0.1",
+  "description": "A basic client for blockchain-api to print, at startup, some standard output (stdout) related to token balance.",
+  "author": "ffmcgee.eth@protonmail.com",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "npx tsc && node ./src/main.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.8",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "bignumber.js": "^9.1.2",
+    "dotenv": "^16.4.5"
+  }
+}

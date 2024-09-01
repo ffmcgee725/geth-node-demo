@@ -1,0 +1,78 @@
+version: '3.7'
+
+services:
+  geth-bootnode:
+    hostname: geth-bootnode
+    env_file:
+      - .env
+    image: geth-client
+    build:
+      context: ./geth-node
+    command:
+      --nodekeyhex="b0ac22adcad37213c7c565810a50f1772291e7b0ce53fb73e7ec2a3c75bc13b5"
+      --nodiscover
+      --ipcdisable
+      --networkid=21
+      --netrestrict="172.16.254.0/28"
+    networks:
+      priv-eth-net:
+        ipv4_address: 172.16.254.2
+
+  geth-rpc-endpoint:
+    hostname: geth-rpc-endpoint
+    env_file:
+      - .env
+    image: geth-client
+    depends_on:
+      - geth-bootnode    
+    command:
+      --bootnodes="enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@geth-bootnode:30303"
+      --allow-insecure-unlock
+      --http
+      --http.addr="0.0.0.0"
+      --http.api="eth,web3,net,admin,personal"
+      --http.corsdomain="*"
+      --networkid=21
+      --netrestrict="172.16.254.0/28"
+    ports:
+      - "8545:8545"
+    networks:
+      priv-eth-net:
+        ipv4_address: 172.16.254.3
+
+  blockchain-api:
+    depends_on:
+      - geth-rpc-endpoint
+    build:
+      context: ./blockchain-api/
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    networks:
+      priv-eth-net:
+        ipv4_address: 172.16.254.4
+
+  client:
+    depends_on:
+      - blockchain-api
+    build:
+      context: ./client/
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - .:/client
+    networks:
+      priv-eth-net:
+        ipv4_address: 172.16.254.5
+
+networks:
+  priv-eth-net:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.16.254.0/28
